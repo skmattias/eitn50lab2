@@ -1,4 +1,3 @@
-import regex
 from Crypto import Random
 import socket
 
