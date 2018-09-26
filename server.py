@@ -16,8 +16,12 @@ message_count = 0
 while True:
     print('Waiting for message', message_count)
     data, address = s.recvfrom(1024)
-    data = p.decrypt(data, key)
-    data = p.from_string(data, message_count)
+    packet_encrypted = p.ProtocolEncrypted.from_string(data.decode())
+    packet = packet_encrypted.decrypt(key)
+
+    if packet.id != str(message_count):
+        raise ValueError('Message count', packet.id, "doesn't match")
+
     message_count += 1
-    data = data.data
+    data = packet.data
     print('Got ', data)

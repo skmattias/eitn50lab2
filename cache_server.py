@@ -1,12 +1,11 @@
 import socket
 import _thread
 import time
+import protocol as p
 
 IP = '127.0.0.1'
 PORT = 1111
-SERVER_PORT = 2222
-cache = []
-print('Cache server started')
+cache = []  # type: [((str, int), bytes)]
 
 
 def read_data():
@@ -19,7 +18,8 @@ def read_data():
 
     while True:
         data, address = s.recvfrom(1024)
-        cache.append(data)
+        packet = p.ProtocolEncrypted.from_string(data.decode())
+        cache.append(((packet.ip, packet.port), data))
         print('Received message')
 
 
@@ -31,17 +31,15 @@ def send_data():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     while True:
         time.sleep(5)
-        print('Sending', len(cache), 'packets')
         for data in cache:
-            s.sendto(data, (IP, SERVER_PORT))
+            print('Sending packet to', ':'.join([data[0][0], str(data[0][1])]))
+            s.sendto(data[1], data[0])
         cache.clear()
 
 
-try:
-    _thread.start_new_thread(read_data, ())
-    _thread.start_new_thread(send_data(), ())
-except:
-    print("Error: unable to start thread")
+print('Cache server started')
+_thread.start_new_thread(read_data, ())
+_thread.start_new_thread(send_data(), ())
 
 while True:
     pass
